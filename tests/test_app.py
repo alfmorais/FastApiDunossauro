@@ -1,3 +1,6 @@
+from fast_zero.schemas import UserPublic
+
+
 def test_root_success(client):
     expected_result = {'message': 'Olá Mundo!'}
 
@@ -13,28 +16,22 @@ def test_create_user_success(client):
         'username': 'alfredneto',
         'email': 'alfredneto@email.com',
     }
-    payload = {
-        'username': 'alfredneto',
-        'email': 'alfredneto@email.com',
-        'password': '123456',
-    }
 
-    response = client.post('/users/', json=payload)
+    response = client.post(
+        '/users/',
+        json={
+            'username': 'alfredneto',
+            'email': 'alfredneto@email.com',
+            'password': '123456',
+        },
+    )
 
     assert response.status_code == 201
     assert response.json() == expected_result
 
 
-def test_read_users_success(client):
-    expected_result = {
-        'users': [
-            {
-                'id': 1,
-                'username': 'alfredneto',
-                'email': 'alfredneto@email.com',
-            }
-        ]
-    }
+def test_read_users_with_zero_results_success(client):
+    expected_result = {'users': []}
 
     response = client.get('/users/')
 
@@ -42,7 +39,15 @@ def test_read_users_success(client):
     assert response.json() == expected_result
 
 
-def test_update_user_success(client):
+def test_read_users_with_users(client, user):
+    user_expected_result = UserPublic.model_validate(user).model_dump()
+
+    response = client.get('/users/')
+
+    assert response.json() == {'users': [user_expected_result]}
+
+
+def test_update_user_success(client, user):
     expected_result = {
         'id': 1,
         'username': 'bob',
@@ -74,7 +79,7 @@ def test_update_user_error(client):
     assert response.json() == expected_result
 
 
-def test_delete_user_success(client):
+def test_delete_user_success(client, user):
     expected_result = {'detail': 'User deleted'}
     response = client.delete('/users/1')
 
